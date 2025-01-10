@@ -24,7 +24,12 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = [
+  "reportlab==4.2.5",
+  "Pillow==11.1.0",
+  "pdf2image==1.17.0",
+  "plasmapdf==0.0.1"
+]
 
 [project.urls]
 Documentation = "https://github.com/JSv4/pdfredact#readme"
@@ -33,6 +38,16 @@ Source = "https://github.com/JSv4/pdfredact"
 
 [tool.hatch.version]
 path = "src/pdfredact/__about__.py"
+
+[tool.hatch.envs.test]
+dependencies = [
+  "pytest",
+  "pytest-cov",
+  "pytesseract",
+  "PyPDF2"
+]
+[tool.hatch.envs.test.scripts]
+start = "pytest {args:tests}"
 
 [tool.hatch.envs.types]
 extra-dependencies = [

@@ -8,3 +8,11 @@ __pycache__/
 
 .idea/
 debug_*
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+
+dist/
+
+.venv/

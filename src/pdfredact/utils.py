@@ -73,7 +73,7 @@ def redact_pdf_to_images(
     pages = convert_from_bytes(
         pdf_bytes,
         dpi=int(dpi),
-        poppler_path=poppler_path,
+        poppler_path=poppler_path,  # type: ignore
         use_pdftocairo=use_pdftocairo,
         fmt="png",
     )

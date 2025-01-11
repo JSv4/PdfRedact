@@ -38,19 +38,18 @@ class TestImageRedaction(unittest.TestCase):
     2) (Optionally) building a new PDF with a text layer from those images.
     """
 
-    @classmethod
-    def setUpClass(cls) -> None:
+    def setUp(self) -> None:
         """
-        Load test data and PDF once for all tests in this suite.
+        Load test data and PDF for each test in this suite.
         """
         # Load PAWLS data
         fixtures_dir = Path(__file__).parent / "fixtures"
         with open(fixtures_dir / "pawls.json") as f:
-            cls.pawls_data: List[PawlsPagePythonType] = json.load(f)
+            self.pawls_data: List[PawlsPagePythonType] = json.load(f)
 
         # Load PDF
         with open(fixtures_dir / "doc.pdf", "rb") as f:
-            cls.pdf_bytes = f.read()
+            self.pdf_bytes = f.read()
 
     def test_redact_specific_date(self) -> None:
         """

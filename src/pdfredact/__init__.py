@@ -2,11 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 from .utils import (
-    redact_pdf_to_images,
     build_text_redacted_pdf,
+    redact_pdf_to_images,
 )
 
 __all__ = [
-    "redact_pdf_to_images",
     "build_text_redacted_pdf",
+    "redact_pdf_to_images",
 ]

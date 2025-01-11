@@ -1,18 +1,15 @@
 from __future__ import annotations
+
 import io
 import logging
+
 from typing import List, Optional
 
 from PIL import Image, ImageDraw
-from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
+from plasmapdf.models.types import OpenContractsSinglePageAnnotationType, PawlsPagePythonType
 from reportlab.lib.colors import Color  # For alpha-based transparency
-
-from plasmapdf.models.types import (
-    OpenContractsSinglePageAnnotationType,
-    PawlsPagePythonType,
-    BoundingBoxPythonType
-)
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +19,7 @@ def _compute_pixel_coordinates(
     page_width: float,
     page_height: float,
     image_width: int,
-    image_height: int
+    image_height: int,
 ) -> tuple[float, float, float, float]:
     """
     Convert a PDF (point-based) bounding box to pixel coordinates
@@ -53,10 +50,10 @@ def _compute_pixel_coordinates(
 def redact_pdf_to_images(
     pdf_bytes: bytes,
     pawls_pages: List[PawlsPagePythonType],
-    page_annotations: List[List[BoundingBoxPythonType]],
+    page_annotations: list[list[OpenContractsSinglePageAnnotationType]],
     dpi: float = 300.0,
     poppler_path: Optional[str] = None,
-    use_pdftocairo: bool = False
+    use_pdftocairo: bool = False,
 ) -> List[Image.Image]:
     """
     Convert a PDF to images (via pdf2image) at the specified dpi and apply rectangular
@@ -77,7 +74,7 @@ def redact_pdf_to_images(
 
     pages = convert_from_bytes(
         pdf_bytes,
-        dpi=dpi,
+        dpi=int(dpi),
         poppler_path=poppler_path,
         use_pdftocairo=use_pdftocairo,
         fmt="png",
@@ -97,7 +94,7 @@ def redact_pdf_to_images(
                 page_width=page_w,
                 page_height=page_h,
                 image_width=page_img.width,
-                image_height=page_img.height
+                image_height=page_img.height,
             )
             draw.rectangle([left, top, right, bottom], fill="black")
 
@@ -110,9 +107,9 @@ def build_text_redacted_pdf(
     output_pdf: str,
     redacted_images: List[Image.Image],
     pawls_pages: List[PawlsPagePythonType],
-    page_redactions: List[List[BoundingBoxPythonType]],
+    page_redactions: List[List[OpenContractsSinglePageAnnotationType]],
     dpi: float,
-    hide_text: bool = True
+    hide_text: bool = True,
 ) -> None:
     """
     Build a new PDF from redacted raster images plus a text layer for copy/paste,
@@ -186,8 +183,7 @@ def build_text_redacted_pdf(
 
 
 def _is_token_in_redactions(
-    token_dict: dict[str, float | str],
-    redactions: List[BoundingBoxPythonType]
+    token_dict: dict[str, float | str], redactions: List[OpenContractsSinglePageAnnotationType]
 ) -> bool:
     """
     Checks if a token's bounding box intersects any redaction bounding box.
@@ -216,10 +212,10 @@ def _is_token_in_redactions(
 
         # Check for overlap (token vs. bbox)
         if not (
-            token_r < b_left or    # entirely left
-            x_left > b_right or    # entirely right
-            token_b < b_top or     # entirely above
-            y_top > b_bottom       # entirely below
+            token_r < b_left  # entirely left
+            or x_left > b_right  # entirely right
+            or token_b < b_top  # entirely above
+            or y_top > b_bottom  # entirely below
         ):
             return True
 

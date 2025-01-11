@@ -3,8 +3,6 @@ from __future__ import annotations
 import io
 import logging
 
-from typing import List, Optional
-
 from PIL import Image, ImageDraw
 from plasmapdf.models.types import OpenContractsSinglePageAnnotationType, PawlsPagePythonType
 from reportlab.lib.colors import Color  # For alpha-based transparency
@@ -49,12 +47,12 @@ def _compute_pixel_coordinates(
 
 def redact_pdf_to_images(
     pdf_bytes: bytes,
-    pawls_pages: List[PawlsPagePythonType],
+    pawls_pages: list[PawlsPagePythonType],
     page_annotations: list[list[OpenContractsSinglePageAnnotationType]],
     dpi: float = 300.0,
-    poppler_path: Optional[str] = None,
+    poppler_path: str | None = None,
     use_pdftocairo: bool = False,
-) -> List[Image.Image]:
+) -> list[Image.Image]:
     """
     Convert a PDF to images (via pdf2image) at the specified dpi and apply rectangular
     fill (e.g., black) over bounding boxes. Returns a list of PIL Images.
@@ -80,7 +78,7 @@ def redact_pdf_to_images(
         fmt="png",
     )
 
-    redacted_images: List[Image.Image] = []
+    redacted_images: list[Image.Image] = []
 
     for idx, page_img in enumerate(pages):
         draw = ImageDraw.Draw(page_img)
@@ -105,9 +103,9 @@ def redact_pdf_to_images(
 
 def build_text_redacted_pdf(
     output_pdf: str,
-    redacted_images: List[Image.Image],
-    pawls_pages: List[PawlsPagePythonType],
-    page_redactions: List[List[OpenContractsSinglePageAnnotationType]],
+    redacted_images: list[Image.Image],
+    pawls_pages: list[PawlsPagePythonType],
+    page_redactions: list[list[OpenContractsSinglePageAnnotationType]],
     dpi: float,
     hide_text: bool = True,
 ) -> None:
@@ -166,7 +164,6 @@ def build_text_redacted_pdf(
 
             x_left = float(token["x"])
             y_top = float(token["y"])
-            token_w = float(token["width"])
             token_h = float(token["height"])
 
             # Convert top-based coords to bottom-based
@@ -183,7 +180,7 @@ def build_text_redacted_pdf(
 
 
 def _is_token_in_redactions(
-    token_dict: dict[str, float | str], redactions: List[OpenContractsSinglePageAnnotationType]
+    token_dict: dict[str, float | str], redactions: list[OpenContractsSinglePageAnnotationType]
 ) -> bool:
     """
     Checks if a token's bounding box intersects any redaction bounding box.

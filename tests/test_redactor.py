@@ -297,19 +297,6 @@ class TestImageRedaction(unittest.TestCase):
 
         redacts = ["Exhibit 10.1", "Aucta Pharmaceuticals", "Eton Pharmaceuticals", "Eton", "Aucta"]
 
-        """
-        
-        Found why test is failing but still not sure of actual root cause. For some reason, for the tokens wrapped in unicode characters, annotation_json returns empty... shit I think I know what it is. 
-        
-        Found match at index 533
-        Full match ETON
-        Context: FIELD PKWY, SUITE 235, DEER PARK, ILLINOIS, USA (“ETON”), AND AUCTA PHARMACEUTICALS, INC., A DELAWARE CO
-        Redact: {'id': 'redact_533', 'start': 533, 'end': 537, 'text': 'ETON'}
-        Pages:   Page Start   End
-        0    0     0  2592
-        Redacting oc annotation: {'id': '410c48e3-4c24-4ddc-989d-b642c58e9b83', 'annotationLabel': 'REDACT', 'rawText': 'ETON', 'page': 0, 'annotation_json': {-1: {'bounds': {'top': -1.0, 'bottom': -1.0, 'left': -1.0, 'right': -1.0}, 'rawText': '', 'tokensJsons': []}}, 'annotation_type': <AnnotationType.TOKEN_LABEL: 'TOKEN_LABEL'>, 'parent_id': None, 'structural': False}
-        """
-
         # Find spans and create annotations
         test_annotations = []
         doc_text = pdf_data_layer.doc_text.upper()

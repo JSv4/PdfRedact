@@ -1,8 +1,8 @@
+import io
 import json
 import logging
 import os
 import unittest
-import io
 
 from pathlib import Path
 from typing import List, Tuple
@@ -31,7 +31,10 @@ if os.name == "nt":
 # Check env for Poppler path, otherwise use None which will try to use system path
 POPPLER_PATH = os.getenv("POPPLER_PATH", None)
 
-def _generate_test_annotations_from_strings(redacts: List[Tuple[str, ...]], pawls_data: List[PawlsPagePythonType]) -> List[OpenContractsSinglePageAnnotationType]:
+
+def _generate_test_annotations_from_strings(
+    redacts: List[Tuple[str, ...]], pawls_data: List[PawlsPagePythonType]
+) -> List[OpenContractsSinglePageAnnotationType]:
     """
     Generate test annotations from a list of strings.
     """
@@ -59,20 +62,14 @@ def _generate_test_annotations_from_strings(redacts: List[Tuple[str, ...]], pawl
                         {
                             "indices": matched_indices,
                             "bounds": {
-                                "left": min(
-                                    first_page_tokens[idx]["x"] for idx in matched_indices
-                                ),
+                                "left": min(first_page_tokens[idx]["x"] for idx in matched_indices),
                                 "right": max(
-                                    first_page_tokens[idx]["x"]
-                                    + first_page_tokens[idx]["width"]
+                                    first_page_tokens[idx]["x"] + first_page_tokens[idx]["width"]
                                     for idx in matched_indices
                                 ),
-                                "top": min(
-                                    first_page_tokens[idx]["y"] for idx in matched_indices
-                                ),
+                                "top": min(first_page_tokens[idx]["y"] for idx in matched_indices),
                                 "bottom": max(
-                                    first_page_tokens[idx]["y"]
-                                    + first_page_tokens[idx]["height"]
+                                    first_page_tokens[idx]["y"] + first_page_tokens[idx]["height"]
                                     for idx in matched_indices
                                 ),
                             },
@@ -97,6 +94,7 @@ def _generate_test_annotations_from_strings(redacts: List[Tuple[str, ...]], pawl
     # because these are "page_annotations," one list per page
     page_annotations = [test_annotations] + [[] for _ in pawls_data[1:]]
     return page_annotations
+
 
 class TestImageRedaction(unittest.TestCase):
     """
@@ -190,7 +188,7 @@ class TestImageRedaction(unittest.TestCase):
         ]
 
         # Find all matching token sequences
-        
+
         page_annotations = _generate_test_annotations_from_strings(redacts, self.pawls_data)
         print(f"Full redact list (no plasma): {page_annotations}")
 
@@ -390,6 +388,7 @@ class TestImageRedaction(unittest.TestCase):
         self.assertIsInstance(
             bytes_from_bytesio_file, bytes, "Output from BytesIO is not of type bytes."
         )
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

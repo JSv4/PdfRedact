@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import io
 import logging
-from typing import NoReturn
 
 from PIL import Image, ImageDraw
 from plasmapdf.models.types import OpenContractsSinglePageAnnotationType, PawlsPagePythonType
@@ -177,7 +176,7 @@ def build_text_redacted_pdf(
         c.showPage()
 
     c.save()
-    
+
     logger.info(f"Created {output_pdf} with fully transparent text.")
 
 

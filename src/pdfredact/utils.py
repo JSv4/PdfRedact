@@ -102,20 +102,20 @@ def redact_pdf_to_images(
 
 
 def build_text_redacted_pdf(
-    output_pdf: str,
+    output_pdf: str | io.BytesIO,
     redacted_images: list[Image.Image],
     pawls_pages: list[PawlsPagePythonType],
     page_redactions: list[list[OpenContractsSinglePageAnnotationType]],
     dpi: float,
     hide_text: bool = True,
-) -> None:
+) -> bytes:
     """
     Build a new PDF from redacted raster images plus a text layer for copy/paste,
     omitting tokens that fall under redacted bounding boxes. The text can be
     fully transparent so it does not obscure the PDF.
 
     Args:
-        output_pdf: Path to the resulting PDF file.
+        output_pdf: Path to the resulting PDF file or io.BytesIO object.
         redacted_images: List of PIL Images (one per page) with blacked-out areas.
         pawls_pages: PawlsPagePythonType data with original PDF dimension/tokens.
         page_redactions: BBoxes to redact (parallel to pawls_pages).
@@ -176,7 +176,14 @@ def build_text_redacted_pdf(
         c.showPage()
 
     c.save()
+    
     logger.info(f"Created {output_pdf} with fully transparent text.")
+    
+    if isinstance(output_pdf, io.BytesIO):
+        return output_pdf.getvalue()
+    else:
+        with open(output_pdf, "rb"  ) as f:
+            return f.read()
 
 
 def _is_token_in_redactions(

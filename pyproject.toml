@@ -27,7 +27,6 @@ dependencies = [
   "Pillow==11.1.0",
   "pdf2image==1.17.0",
   "plasmapdf==0.1.1",
-  "rapidfuzz==3.11.0"
 ]
 
 [project.urls]
@@ -61,6 +60,7 @@ branch = true
 parallel = true
 omit = [
   "src/pdfredact/__about__.py",
+  "examples/*",
 ]
 
 [tool.coverage.paths]

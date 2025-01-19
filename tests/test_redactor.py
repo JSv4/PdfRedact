@@ -30,6 +30,74 @@ if os.name == "nt":
 # Check env for Poppler path, otherwise use None which will try to use system path
 POPPLER_PATH = os.getenv("POPPLER_PATH", None)
 
+def _generate_test_annotations_from_strings(redacts: List[str], pawls_data: List[PawlsPagePythonType]) -> List[OpenContractsSinglePageAnnotationType]:
+    """
+    Generate test annotations from a list of strings.
+    """
+    all_target_tokens = []
+    first_page_tokens = pawls_data[0]["tokens"]
+
+    for redact_tuple in redacts:
+        i = 0
+        while i < len(first_page_tokens):
+            if redact_tuple[0].lower() in first_page_tokens[i]["text"].lower():
+                # Potential match found, check subsequent tokens
+                match_found = True
+                for j, expected_text in enumerate(redact_tuple[1:], 1):
+                    if (
+                        i + j >= len(first_page_tokens)
+                        or expected_text.lower() not in first_page_tokens[i + j]["text"].lower()
+                    ):
+                        match_found = False
+                        break
+
+                if match_found:
+                    # Add all token indices that form this match
+                    matched_indices = list(range(i, i + len(redact_tuple)))
+                    all_target_tokens.append(
+                        {
+                            "indices": matched_indices,
+                            "bounds": {
+                                "left": min(
+                                    first_page_tokens[idx]["x"] for idx in matched_indices
+                                ),
+                                "right": max(
+                                    first_page_tokens[idx]["x"]
+                                    + first_page_tokens[idx]["width"]
+                                    for idx in matched_indices
+                                ),
+                                "top": min(
+                                    first_page_tokens[idx]["y"] for idx in matched_indices
+                                ),
+                                "bottom": max(
+                                    first_page_tokens[idx]["y"]
+                                    + first_page_tokens[idx]["height"]
+                                    for idx in matched_indices
+                                ),
+                            },
+                            "text": " ".join(redact_tuple),
+                        }
+                    )
+            i += 1
+
+    assert(
+        all_target_tokens, "Could not find any of the specified token sequences for redaction."
+    )
+
+    # Create annotations for each matched sequence
+    test_annotations: List[OpenContractsSinglePageAnnotationType] = [
+        {
+            "bounds": match["bounds"],
+            "tokensJsons": [{"pageIndex": 0, "tokenIndex": idx} for idx in match["indices"]],
+            "rawText": match["text"],
+        }
+        for match in all_target_tokens
+    ]
+
+    # We'll wrap our single page annotation list in another list
+    # because these are "page_annotations," one list per page
+    page_annotations = [test_annotations] + [[] for _ in pawls_data[1:]]
+    return page_annotations
 
 class TestImageRedaction(unittest.TestCase):
     """
@@ -65,69 +133,7 @@ class TestImageRedaction(unittest.TestCase):
         ]
 
         # Find all matching token sequences
-        all_target_tokens = []
-        first_page_tokens = self.pawls_data[0]["tokens"]
-
-        for redact_tuple in redacts:
-            i = 0
-            while i < len(first_page_tokens):
-                if redact_tuple[0].lower() in first_page_tokens[i]["text"].lower():
-                    # Potential match found, check subsequent tokens
-                    match_found = True
-                    for j, expected_text in enumerate(redact_tuple[1:], 1):
-                        if (
-                            i + j >= len(first_page_tokens)
-                            or expected_text.lower() not in first_page_tokens[i + j]["text"].lower()
-                        ):
-                            match_found = False
-                            break
-
-                    if match_found:
-                        # Add all token indices that form this match
-                        matched_indices = list(range(i, i + len(redact_tuple)))
-                        all_target_tokens.append(
-                            {
-                                "indices": matched_indices,
-                                "bounds": {
-                                    "left": min(
-                                        first_page_tokens[idx]["x"] for idx in matched_indices
-                                    ),
-                                    "right": max(
-                                        first_page_tokens[idx]["x"]
-                                        + first_page_tokens[idx]["width"]
-                                        for idx in matched_indices
-                                    ),
-                                    "top": min(
-                                        first_page_tokens[idx]["y"] for idx in matched_indices
-                                    ),
-                                    "bottom": max(
-                                        first_page_tokens[idx]["y"]
-                                        + first_page_tokens[idx]["height"]
-                                        for idx in matched_indices
-                                    ),
-                                },
-                                "text": " ".join(redact_tuple),
-                            }
-                        )
-                i += 1
-
-        self.assertTrue(
-            all_target_tokens, "Could not find any of the specified token sequences for redaction."
-        )
-
-        # Create annotations for each matched sequence
-        test_annotations: List[OpenContractsSinglePageAnnotationType] = [
-            {
-                "bounds": match["bounds"],
-                "tokensJsons": [{"pageIndex": 0, "tokenIndex": idx} for idx in match["indices"]],
-                "rawText": match["text"],
-            }
-            for match in all_target_tokens
-        ]
-
-        # We'll wrap our single page annotation list in another list
-        # because these are "page_annotations," one list per page
-        page_annotations = [test_annotations] + [[] for _ in self.pawls_data[1:]]
+        page_annotations = _generate_test_annotations_from_strings(redacts, self.pawls_data)
 
         # Use the newly introduced pipeline function to redact images
         redacted_image_list = redact_pdf_to_images(
@@ -185,71 +191,9 @@ class TestImageRedaction(unittest.TestCase):
         ]
 
         # Find all matching token sequences
-        all_target_tokens = []
-        first_page_tokens = self.pawls_data[0]["tokens"]
-
-        for redact_tuple in redacts:
-            i = 0
-            while i < len(first_page_tokens):
-                if redact_tuple[0].lower() in first_page_tokens[i]["text"].lower():
-                    # Potential match found, check subsequent tokens
-                    match_found = True
-                    for j, expected_text in enumerate(redact_tuple[1:], 1):
-                        if (
-                            i + j >= len(first_page_tokens)
-                            or expected_text.lower() not in first_page_tokens[i + j]["text"].lower()
-                        ):
-                            match_found = False
-                            break
-
-                    if match_found:
-                        # Add all token indices that form this match
-                        matched_indices = list(range(i, i + len(redact_tuple)))
-                        all_target_tokens.append(
-                            {
-                                "indices": matched_indices,
-                                "bounds": {
-                                    "left": min(
-                                        first_page_tokens[idx]["x"] for idx in matched_indices
-                                    ),
-                                    "right": max(
-                                        first_page_tokens[idx]["x"]
-                                        + first_page_tokens[idx]["width"]
-                                        for idx in matched_indices
-                                    ),
-                                    "top": min(
-                                        first_page_tokens[idx]["y"] for idx in matched_indices
-                                    ),
-                                    "bottom": max(
-                                        first_page_tokens[idx]["y"]
-                                        + first_page_tokens[idx]["height"]
-                                        for idx in matched_indices
-                                    ),
-                                },
-                                "text": " ".join(redact_tuple),
-                            }
-                        )
-                i += 1
-
-        self.assertTrue(
-            all_target_tokens, "Could not find any of the specified token sequences for redaction."
-        )
-
-        # Create annotations for each matched sequence
-        test_annotations: List[OpenContractsSinglePageAnnotationType] = [
-            {
-                "bounds": match["bounds"],
-                "tokensJsons": [{"pageIndex": 0, "tokenIndex": idx} for idx in match["indices"]],
-                "rawText": match["text"],
-            }
-            for match in all_target_tokens
-        ]
-
-        # We'll wrap our single page annotation list in another list
-        # because these are "page_annotations," one list per page
-        page_annotations = [test_annotations] + [[] for _ in self.pawls_data[1:]]
-
-        print(f"Full redact list (no plasma): {test_annotations}")
+        
+        page_annotations = _generate_test_annotations_from_strings(redacts, self.pawls_data)
+        print(f"Full redact list (no plasma): {page_annotations}")
 
         # Use the newly introduced pipeline function to redact images
         redacted_image_list = redact_pdf_to_images(

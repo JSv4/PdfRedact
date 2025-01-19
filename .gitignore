@@ -16,3 +16,5 @@ debug_*
 dist/
 
 .venv/
+
+test_output.pdf

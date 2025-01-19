@@ -2,9 +2,10 @@ import json
 import logging
 import os
 import unittest
+import io
 
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 import pytesseract
 
@@ -30,7 +31,7 @@ if os.name == "nt":
 # Check env for Poppler path, otherwise use None which will try to use system path
 POPPLER_PATH = os.getenv("POPPLER_PATH", None)
 
-def _generate_test_annotations_from_strings(redacts: List[str], pawls_data: List[PawlsPagePythonType]) -> List[OpenContractsSinglePageAnnotationType]:
+def _generate_test_annotations_from_strings(redacts: List[Tuple[str, ...]], pawls_data: List[PawlsPagePythonType]) -> List[OpenContractsSinglePageAnnotationType]:
     """
     Generate test annotations from a list of strings.
     """
@@ -80,9 +81,7 @@ def _generate_test_annotations_from_strings(redacts: List[str], pawls_data: List
                     )
             i += 1
 
-    assert(
-        all_target_tokens, "Could not find any of the specified token sequences for redaction."
-    )
+    assert all_target_tokens, "Could not find any of the specified token sequences for redaction."
 
     # Create annotations for each matched sequence
     test_annotations: List[OpenContractsSinglePageAnnotationType] = [
@@ -332,6 +331,65 @@ class TestImageRedaction(unittest.TestCase):
                 f"Redacted text '{redact_text}' was still found in the PDF text layer.",
             )
 
+    def test_build_text_redacted_pdf_returns_bytes_consistently(self) -> None:
+        """
+        Test that build_text_redacted_pdf returns identical bytes when output_pdf is a string path or BytesIO.
+        """
+        redacts = [
+            ("Exhibit", "10.1"),
+            ("Aucta", "Pharmaceuticals"),
+            ("Eton", "Pharmaceuticals"),
+            ("Eton",),
+            ("Aucta",),
+        ]
+
+        # Generate annotations
+        page_annotations = _generate_test_annotations_from_strings(redacts, self.pawls_data)
+
+        # Redact images
+        redacted_image_list = redact_pdf_to_images(
+            pdf_bytes=self.pdf_bytes,
+            pawls_pages=self.pawls_data,
+            page_annotations=page_annotations,
+            dpi=300,
+            poppler_path=POPPLER_PATH if os.name == "nt" else None,
+            use_pdftocairo=False,
+        )
+
+        # Test with string path
+        output_pdf_path = "test_output.pdf"
+        build_text_redacted_pdf(
+            output_pdf=output_pdf_path,
+            redacted_images=redacted_image_list,
+            pawls_pages=self.pawls_data,
+            page_redactions=page_annotations,
+            dpi=300,
+            hide_text=True,
+        )
+
+        # Read back the bytes from the file
+        with open(output_pdf_path, "rb") as f:
+            bytes_from_file = f.read()
+
+        # Test with BytesIO
+        output_pdf_bytesio = io.BytesIO()
+        build_text_redacted_pdf(
+            output_pdf=output_pdf_bytesio,
+            redacted_images=redacted_image_list,
+            pawls_pages=self.pawls_data,
+            page_redactions=page_annotations,
+            dpi=300,
+            hide_text=True,
+        )
+        bytes_from_bytesio_file = output_pdf_bytesio.getvalue()
+
+        # Assert that outputs are instances of bytes
+        self.assertIsInstance(
+            bytes_from_file, bytes, "Output from string path is not of type bytes."
+        )
+        self.assertIsInstance(
+            bytes_from_bytesio_file, bytes, "Output from BytesIO is not of type bytes."
+        )
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

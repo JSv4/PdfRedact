@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import logging
+from typing import NoReturn
 
 from PIL import Image, ImageDraw
 from plasmapdf.models.types import OpenContractsSinglePageAnnotationType, PawlsPagePythonType
@@ -108,7 +109,7 @@ def build_text_redacted_pdf(
     page_redactions: list[list[OpenContractsSinglePageAnnotationType]],
     dpi: float,
     hide_text: bool = True,
-) -> bytes:
+) -> None:
     """
     Build a new PDF from redacted raster images plus a text layer for copy/paste,
     omitting tokens that fall under redacted bounding boxes. The text can be
@@ -178,12 +179,6 @@ def build_text_redacted_pdf(
     c.save()
     
     logger.info(f"Created {output_pdf} with fully transparent text.")
-    
-    if isinstance(output_pdf, io.BytesIO):
-        return output_pdf.getvalue()
-    else:
-        with open(output_pdf, "rb"  ) as f:
-            return f.read()
 
 
 def _is_token_in_redactions(
